@@ -1,299 +1,629 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>AI Tool Legal Issue Spotter</title>
-<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>The Esq. — Legal Risk & IP Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'DM Sans',sans-serif;background:#f4f5f7;color:#1a1a1a;min-height:100vh}
-  .serif{font-family:'Libre Baskerville',serif}
-  .app{max-width:900px;margin:0 auto;padding:2rem 1.5rem}
-  .header{text-align:center;padding:2.5rem 0 2rem}
-  .header h1{font-family:'Libre Baskerville',serif;font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#1a1a1a}
-  .header p{font-size:14px;color:#666;margin-top:8px}
-  .rule{height:1px;background:#e0e0e0;margin:0.5rem 0 2rem}
-  .search-card{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:1.5rem}
-  .search-row{display:flex;gap:10px;align-items:center}
-  .search-row input{flex:1;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:15px;border:1px solid #ddd;border-radius:8px;background:#f9f9f9;color:#1a1a1a;outline:none}
-  .search-row input:focus{border-color:#1a2a4a}
-  .btn-primary{padding:10px 22px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;background:#1a2a4a;color:#fff;border:none;border-radius:8px;cursor:pointer;white-space:nowrap}
-  .btn-primary:hover{background:#243560}
-  .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
-  .btn-outline{padding:9px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:transparent;color:#1a1a1a;border:1px solid #ccc;border-radius:8px;cursor:pointer}
-  .btn-outline:hover{background:#f5f5f5}
-  .spinner{display:inline-block;width:18px;height:18px;border:2px solid #ffffff44;border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .error-box{background:#fff0f0;border:1px solid #ffcccc;color:#cc0000;padding:12px 16px;border-radius:8px;font-size:14px;margin-top:1rem}
-  .section{margin-top:1.5rem}
-  .section-title{font-family:'Libre Baskerville',serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:0.75rem}
-  .summary-card{background:#fff;border-left:3px solid #1a2a4a;border-top:1px solid #e8e8e8;border-right:1px solid #e8e8e8;border-bottom:1px solid #e8e8e8;border-radius:0 8px 8px 0;padding:1rem 1.25rem}
-  .summary-card p{font-size:14px;line-height:1.7;color:#1a1a1a}
-  .badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 9px;border-radius:20px}
-  .badge-high{background:#FCEBEB;color:#791F1F}
-  .badge-medium{background:#FAEEDA;color:#633806}
-  .badge-low{background:#EAF3DE;color:#27500A}
-  .bucket-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-  .bucket-card{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:1rem}
-  .bucket-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.6rem}
-  .bucket-name{font-size:13px;font-weight:500;color:#1a1a1a;line-height:1.4;flex:1;margin-right:8px}
-  .bucket-issues{padding-left:16px;margin:0}
-  .bucket-issues li{font-size:12px;color:#555;line-height:1.6}
-  .state-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden}
-  .state-table th{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:#888;padding:10px 14px;background:#f9f9f9;border-bottom:1px solid #e8e8e8;text-align:left}
-  .state-table td{font-size:13px;padding:9px 14px;border-bottom:1px solid #f0f0f0;color:#1a1a1a;vertical-align:top}
-  .state-table tr:last-child td{border-bottom:none}
-  .state-table td:first-child{font-weight:500;white-space:nowrap}
-  .state-table td:nth-child(2){color:#555;font-style:italic}
-  .sources-list{display:flex;flex-direction:column;gap:8px}
-  .source-item{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:10px 14px}
-  .source-item a{font-size:13px;color:#1a4a8a;text-decoration:none;font-weight:500}
-  .source-item a:hover{text-decoration:underline}
-  .source-item p{font-size:12px;color:#888;margin-top:2px}
-  .rec-card{background:#f5f7ff;border:1px solid #c5cfe8;border-radius:12px;padding:1.25rem 1.5rem}
-  .rec-label{font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#4a5c8a;margin-bottom:6px}
-  .rec-text{font-size:14px;line-height:1.7;color:#1a2a4a}
-  .rec-actions{display:flex;gap:10px;margin-top:1rem;flex-wrap:wrap}
-  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem}
-  .modal{background:#fff;border-radius:12px;border:1px solid #ddd;padding:1.5rem;width:100%;max-width:680px;max-height:80vh;overflow-y:auto}
-  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
-  .modal-title{font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700}
-  .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#888;padding:4px}
-  .email-body{background:#f9f9f9;border:1px solid #e8e8e8;border-radius:8px;padding:1.25rem;font-size:13px;line-height:1.8;white-space:pre-wrap;color:#1a1a1a}
-  .modal-footer{display:flex;justify-content:flex-end;margin-top:1rem;gap:8px;align-items:center}
-  .copied{color:green;font-size:13px}
-  @media(max-width:600px){.search-row{flex-direction:column}.btn-primary{width:100%}.bucket-grid{grid-template-columns:1fr}}
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--hot:#FF1493;--pink:#FF6B9D;--blush:#FFF0F5;--rose:#FFE4EF;--gold:#FFD700;--deep:#8B0045;--wine:#6B0035;--plum:#4A0028;--card:#FFF;--border:#FFD0E0;--bg:#FFF5F9;--text:#3A0028;--text2:#C06090;--text3:#906;--green:#2DB866;--orange:#F5A623;--red:#E8006E;--blue:#5B8DEF}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+body::before{content:'';position:fixed;top:0;left:0;right:0;height:3px;background:var(--hot);z-index:999}
+.app{max-width:1000px;margin:0 auto;padding:2rem 1.5rem 4rem}
+.hdr{text-align:center;padding:2.5rem 0 1.5rem}
+.hdr-badge{display:inline-block;background:linear-gradient(135deg,var(--hot),#FF69B4);color:#fff;padding:5px 18px;border-radius:24px;font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin-bottom:14px;box-shadow:0 2px 12px #FF149344}
+.hdr h1{font-family:'Playfair Display',serif;font-size:32px;font-weight:700;color:var(--deep)}
+.hdr h1 em{font-style:italic;color:var(--hot)}
+.hdr p{font-size:13px;color:var(--text2);margin-top:8px;max-width:600px;margin-inline:auto;line-height:1.6}
+.hdr-f{display:flex;justify-content:center;gap:16px;margin-top:14px;flex-wrap:wrap}
+.hdr-f span{font-size:11px;color:var(--text2)}
+.hdr-f span::before{content:'✦';color:var(--hot);margin-right:4px;font-size:8px}
+.rule{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:.6rem 0 1.2rem}
+.mbar{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:.8rem 1.2rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mbar label{font-size:12px;font-weight:600;color:var(--text3)}
+.mbar input{flex:1;min-width:140px;padding:7px 12px;font-family:inherit;font-size:13px;border:1.5px solid var(--border);border-radius:10px;background:var(--blush);color:var(--text);outline:none}
+.mbar input:focus{border-color:var(--hot);box-shadow:0 0 0 3px #FF149320}
+.tabs{display:flex;gap:4px;margin-bottom:1.2rem;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:4px}
+.tab{flex:1;padding:10px 6px;font-family:inherit;font-size:13px;font-weight:500;background:0;border:0;border-radius:11px;cursor:pointer;color:var(--text2);transition:.2s}
+.tab.a{background:linear-gradient(135deg,var(--hot),#FF69B4);color:#fff;box-shadow:0 2px 10px #FF149333}
+.tab:hover:not(.a){background:var(--rose)}
+.cd{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:1.3rem;margin-bottom:1.2rem;box-shadow:0 2px 16px #FFB0CC12}
+.cd h2{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--deep);margin-bottom:.7rem}
+.irow{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.irow input,.irow select{flex:1;min-width:150px;padding:11px 14px;font-family:inherit;font-size:14px;border:1.5px solid var(--border);border-radius:12px;background:var(--blush);color:var(--text);outline:none;transition:.2s}
+.irow input:focus,.irow select:focus{border-color:var(--hot);box-shadow:0 0 0 3px #FF149320}
+.irow input::placeholder{color:#D080A0}
+.btn{padding:11px 20px;font-family:inherit;font-size:13px;font-weight:600;border-radius:12px;cursor:pointer;border:0;white-space:nowrap;transition:.2s}
+.bp{background:linear-gradient(135deg,var(--hot),#FF69B4);color:#fff;box-shadow:0 2px 10px #FF149333}
+.bp:hover{transform:translateY(-1px);box-shadow:0 4px 16px #FF149344}
+.bp:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.bo{background:0;color:var(--deep);border:1.5px solid var(--border)}.bo:hover{background:var(--rose);border-color:var(--hot)}
+.bs{padding:6px 13px;font-size:11px}
+.bg{background:linear-gradient(135deg,#FFD700,#FFA500);color:var(--plum);box-shadow:0 2px 10px #FFD70033}
+.sp{display:inline-block;width:15px;height:15px;border:2px solid #fff5;border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.err{background:#FFF0F5;border:1.5px solid #FFB0CC;color:#A00040;padding:10px 14px;border-radius:12px;font-size:13px;margin-top:.8rem}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.ch{padding:6px 14px;border-radius:22px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--blush);color:var(--text2);transition:.15s;user-select:none}
+.ch.on{border-color:var(--hot);background:linear-gradient(135deg,#FFE4EF,#FFF0F5);color:var(--hot);box-shadow:0 1px 6px #FF149320}
+.ch:hover{border-color:var(--hot)}
+.ch small{display:block;font-size:9px;color:var(--text2);margin-top:1px}
+.sg{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.sc{padding:3px 9px;border-radius:6px;font-size:10px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--blush);color:var(--text2);user-select:none;transition:.1s}
+.sc.on{border-color:var(--blue);background:#E0F0FF;color:#003880}
+.lg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.lg input{padding:9px 12px;font-family:inherit;font-size:12px;border:1.5px solid var(--border);border-radius:10px;background:var(--blush);color:var(--text);outline:none}
+.lg input:focus{border-color:var(--hot)}
+.aud{display:flex;gap:3px;background:var(--blush);border:1px solid var(--border);border-radius:10px;padding:3px;margin-bottom:1rem}
+.ab{flex:1;padding:7px 8px;font-family:inherit;font-size:11px;font-weight:500;background:0;border:0;border-radius:8px;cursor:pointer;color:var(--text2);transition:.15s}
+.ab.on{background:var(--card);color:var(--hot);box-shadow:0 1px 4px #0001;font-weight:600}
+.rw{display:flex;align-items:center;gap:16px;margin:1rem 0}
+.rd{position:relative;width:94px;height:94px;flex-shrink:0}
+.rd svg{transform:rotate(-90deg)}
+.rdn{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rdn span:first-child{font-size:24px;font-weight:700;line-height:1}
+.rdn span:last-child{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em}
+.st{font-family:'Playfair Display',serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin:1.2rem 0 .5rem;display:flex;align-items:center;gap:6px}
+.st::after{content:'';flex:1;height:1px;background:var(--border)}
+.sc2{background:linear-gradient(135deg,var(--blush),var(--rose));border-left:3px solid var(--hot);border-radius:0 12px 12px 0;padding:1rem 1.2rem;margin-bottom:.8rem}
+.b{display:inline-block;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px}
+.bh{background:#FFE0EC;color:#8A0030}.bm{background:#FFF0E0;color:#7A4000}.bl{background:#E0FFE8;color:#1A6030}
+.bo2{background:#E0F0FF;color:#003880}.bok{background:#E0FFE8;color:#006020}.bde{background:#F0E0E0;color:#600}.bpe{background:#F0E8FF;color:#400080}.bw{background:#FFF8E0;color:#806000}
+.lb{display:inline-block;font-size:9px;font-weight:600;padding:2px 8px;border-radius:10px;margin-left:6px;letter-spacing:.04em;text-transform:uppercase}
+.lb-l{background:linear-gradient(135deg,#E0FFE8,#C0F0D0);color:#006020}
+.lb-w{background:var(--rose);color:var(--hot)}
+.bg2{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.bc{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:.9rem;transition:border-color .15s}
+.bc:hover{border-color:var(--hot)}
+.bh2{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;gap:6px}
+.bn{font-size:13px;font-weight:600;color:var(--text);flex:1;line-height:1.3}
+.bi{padding-left:14px;margin:0}.bi li{font-size:12px;color:#804060;line-height:1.55}
+.dt{width:100%;border-collapse:collapse;background:var(--card);border:1.5px solid var(--border);border-radius:14px;overflow:hidden}
+.dt th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:8px 11px;background:var(--blush);border-bottom:1px solid var(--border);text-align:left}
+.dt td{font-size:12px;padding:7px 11px;border-bottom:1px solid #FFE8F0;color:var(--text);vertical-align:top;line-height:1.5}
+.dt tr:last-child td{border-bottom:0}
+.dt td:first-child{font-weight:600;color:var(--deep);white-space:nowrap}
+.ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:7px;margin:.8rem 0}
+.is{background:var(--blush);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+.il{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:2px;font-weight:500}
+.iv{font-size:12px;font-weight:500;color:var(--text)}
+.hm-row{display:flex;gap:3px;align-items:center;margin-bottom:3px}
+.hm-l{font-size:10px;width:100px;text-align:right;padding-right:6px;color:var(--text2);font-weight:500;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hm-c{flex:1;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#fff;transition:transform .1s}
+.hm-c:hover{transform:scale(1.05)}
+.hm-h{background:#E8006E}.hm-m{background:#F5A623}.hm-l2{background:#2DB866}
+.tl{position:relative;padding-left:18px;margin:6px 0}
+.tl::before{content:'';position:absolute;left:5px;top:0;bottom:0;width:1.5px;background:var(--border)}
+.ti{position:relative;margin-bottom:8px;padding-left:12px}
+.ti::before{content:'';position:absolute;left:-13px;top:5px;width:7px;height:7px;border-radius:50%;background:var(--hot);border:2px solid #fff;box-shadow:0 0 0 1.5px var(--hot)}
+.td2{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.tt{font-size:12px;color:var(--text);line-height:1.5;margin-top:1px}
+.rc{background:linear-gradient(135deg,#FFF5F8,var(--rose));border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.3rem;margin-top:.8rem}
+.rv{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px}
+.rt{font-size:13px;line-height:1.65;color:var(--plum)}
+.rl{padding-left:15px;margin-top:6px}.rl li{font-size:12px;color:var(--deep);line-height:1.65}
+.ar{display:flex;gap:8px;margin-top:1rem;flex-wrap:wrap}
+.sr{display:flex;flex-direction:column;gap:5px}
+.si{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:7px 11px;transition:border-color .15s}
+.si:hover{border-color:var(--hot)}
+.si a{font-size:12px;color:var(--hot);text-decoration:none;font-weight:600}
+.si a:hover{text-decoration:underline}
+.si span{font-size:12px;font-weight:600;color:var(--deep)}
+.si p{font-size:11px;color:var(--text2);margin-top:1px}
+.ck label{display:flex;align-items:flex-start;gap:8px;padding:6px 0;font-size:12px;color:#804060;cursor:pointer;line-height:1.5}
+.ck input[type=checkbox]{accent-color:var(--hot);margin-top:3px;flex-shrink:0}
+.ci{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);align-items:flex-start}
+.ci:last-child{border:0}
+.cid{background:var(--hot);color:#fff;border-radius:8px;padding:4px 8px;font-size:10px;font-weight:700;text-align:center;min-width:60px;flex-shrink:0}
+.cib{flex:1}.cio{font-size:12px;font-weight:600;color:var(--text)}.cis{font-size:11px;color:var(--text2);margin-top:1px}.cir{font-size:11px;color:#8A0030;font-weight:500}
+.df{display:flex;align-items:center;gap:8px;margin:6px 0;flex-wrap:wrap}
+.dfn{background:var(--rose);border:1.5px solid var(--border);border-radius:10px;padding:6px 12px;font-size:11px;font-weight:500;color:var(--deep)}
+.dfa{color:var(--hot);font-size:16px;font-weight:700}
+.hp{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:1rem 1.2rem;margin-bottom:1.2rem}
+.hl{display:flex;flex-direction:column;gap:6px;max-height:500px;overflow-y:auto}
+.hi{display:flex;justify-content:space-between;align-items:center;background:var(--blush);border:1.5px solid var(--border);border-radius:10px;padding:8px 12px;cursor:pointer;transition:.15s}
+.hi:hover{background:var(--rose);border-color:var(--hot)}
+.hn{font-size:13px;font-weight:600;color:var(--deep)}
+.hm{font-size:11px;color:var(--text2);margin-top:1px}
+.hd{background:0;border:0;color:#D080A0;cursor:pointer;font-size:15px;padding:2px 5px}
+.hd:hover{color:var(--hot)}
+.mbg{position:fixed;inset:0;background:rgba(80,0,40,.5);display:flex;align-items:center;justify-content:center;z-index:300;padding:1rem;backdrop-filter:blur(4px)}
+.md{background:#fff;border-radius:20px;border:1.5px solid var(--border);padding:1.5rem;width:100%;max-width:720px;max-height:88vh;overflow-y:auto}
+.mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.mt2{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--deep)}
+.mc2{background:0;border:0;font-size:20px;cursor:pointer;color:var(--text2)}
+.eb{background:var(--blush);border:1.5px solid var(--border);border-radius:12px;padding:1.1rem;font-size:12px;line-height:1.8;white-space:pre-wrap;color:var(--text);font-family:'JetBrains Mono',monospace;max-height:500px;overflow-y:auto}
+.mf{display:flex;justify-content:flex-end;margin-top:1rem;gap:8px}
+.disc{background:var(--blush);border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;font-size:11px;color:var(--text2);text-align:center;margin-top:2rem;line-height:1.5}
+.disc a{color:var(--hot)}
+/* ── DARK MODE ── */
+.dark{--hot:#FF69B4;--pink:#FF6B9D;--blush:#1a1020;--rose:#231530;--gold:#FFD700;--deep:#FFB0D0;--wine:#FF90B0;--plum:#FFC0D8;--card:#1e1428;--border:#3a2540;--bg:#120a18;--text:#F0E8F5;--text2:#B080C0;--text3:#D090B0;--green:#4ADE80;--orange:#FBBF24;--red:#FF6B9D;--blue:#93B5FF}
+.dark body::before{background:var(--hot)}
+.dark .dt th{background:#1a1020}
+.dark .irow input,.dark .irow select,.dark .mbar input,.dark .lg input{background:#1a1020;border-color:#3a2540;color:var(--text)}
+.dark .ch{background:#1a1020;border-color:#3a2540;color:var(--text2)}
+.dark .ch.on{background:#2a1535;border-color:var(--hot);color:var(--hot)}
+.dark .sc{background:#1a1020;border-color:#3a2540;color:var(--text2)}
+.dark .hm-c{opacity:.9}
+
+/* ── DARK TOGGLE ── */
+.dm-toggle{position:fixed;bottom:20px;right:20px;z-index:200;background:var(--card);border:1.5px solid var(--border);border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;box-shadow:0 2px 12px #0002;transition:.2s}
+.dm-toggle:hover{transform:scale(1.1)}
+
+/* ── COLLAPSIBLE ── */
+.coll-hdr{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between}
+.coll-hdr::after{content:'▾';font-size:12px;color:var(--text2);transition:transform .2s}
+.coll-hdr.closed::after{transform:rotate(-90deg)}
+.coll-body{transition:max-height .3s ease;overflow:hidden}
+.coll-body.shut{max-height:0!important;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0}
+
+/* ── QUICK START ── */
+.qs{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.qs-btn{padding:4px 12px;font-family:inherit;font-size:11px;font-weight:500;border-radius:16px;cursor:pointer;border:1px solid var(--border);background:var(--blush);color:var(--text2);transition:.15s}
+.qs-btn:hover{border-color:var(--hot);color:var(--hot)}
+
+/* ── RATE LIMIT ── */
+.rl-bar{font-size:10px;color:var(--text2);text-align:right;padding:2px 0}
+.rl-ct{font-weight:600;color:var(--hot)}
+
+/* ── COMPARISON ── */
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.cmp-card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:1rem;font-size:12px}
+.cmp-card h4{font-family:'Playfair Display',serif;font-size:14px;color:var(--deep);margin-bottom:6px}
+.cmp-row{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);font-size:11px}
+.cmp-row:last-child{border:0}
+
+/* ── HOW IT WORKS ── */
+.hiw{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:1rem 1.2rem;margin-bottom:1.2rem}
+.hiw h3{font-family:'Playfair Display',serif;font-size:14px;color:var(--deep);margin-bottom:8px}
+.hiw-steps{display:flex;gap:8px;flex-wrap:wrap}
+.hiw-step{flex:1;min-width:120px;background:var(--blush);border-radius:10px;padding:10px;text-align:center}
+.hiw-step .num{font-size:18px;font-weight:700;color:var(--hot)}
+.hiw-step .lbl{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.4}
+
+/* ── AUDIT TRAIL ── */
+.audit{font-size:10px;color:var(--text2);font-family:'JetBrains Mono',monospace;margin-top:8px;padding:6px 10px;background:var(--blush);border-radius:6px}
+
+/* ── RISK CHART (multi-tool) ── */
+.rchart{display:flex;align-items:flex-end;gap:8px;height:120px;padding:8px 0}
+.rchart-bar{flex:1;border-radius:8px 8px 0 0;min-width:40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding-bottom:4px;transition:height .3s}
+.rchart-bar span{font-size:9px;font-weight:600;color:#fff;writing-mode:vertical-rl;transform:rotate(180deg)}
+.rchart-lbl{font-size:9px;color:var(--text2);text-align:center;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60px}
+
+@media(max-width:640px){.irow{flex-direction:column}.btn{width:100%}.bg2{grid-template-columns:1fr}.tabs{flex-wrap:wrap}.mbar{flex-direction:column}.lg{grid-template-columns:1fr}.hdr h1{font-size:24px}.cmp-grid{grid-template-columns:1fr}}
+@media print{.tabs,.mbar,.ar,.btn,.disc,.config-section,.aud,.dm-toggle,.qs,.rl-bar,.hiw{display:none!important}.app{max-width:100%;padding:0}body::before{display:none}}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const{useState}=React;
+<div class="app">
+<div class="hdr">
+  <h1>The <em>Esq.</em></h1>
+  <p>Legal risk analysis and IP intelligence — powered by live USPTO data and AI research.</p>
+</div>
+<div class="rule"></div>
+<div class="mbar">
+  <label>🔑 Gemini API Key</label><input type="password" id="gKey" placeholder="Paste your Gemini API key (stays on your device)" style="min-width:220px" oninput="document.getElementById('kSt').textContent=this.value.length>10?'Key active ✓':'';document.getElementById('kSt').style.color=this.value.length>10?'var(--green)':'var(--text2)'"/>
+  <span id="kSt" style="font-size:11px;font-weight:600"></span>
+  <label style="margin-left:8px">📁 Matter #</label><input type="text" id="matterNum" placeholder="e.g. 2024-001" style="max-width:160px"/>
+</div>
+<div class="tabs">
+  <button class="tab a" onclick="sT('ai')">⚖ AI Tool Risk</button>
+  <button class="tab" onclick="sT('ip')">🔍 IP Search</button>
+  <button class="tab" onclick="sT('history')">💅 History</button>
+</div>
 
-const SYSTEM_PROMPT=`You are a senior product counsel specializing in AI law and technology regulation. When given the name of an AI tool or application, analyze its potential legal liabilities and return ONLY a valid JSON object (no markdown, no code fences, no preamble).
+<div id="tab-ai">
+  <div class="cd"><div class="irow"><input type="text" id="aiIn" placeholder="Enter an AI tool — e.g. ChatGPT, Copilot, Clearview AI..." onkeydown="if(event.key==='Enter')runAI()"/><button class="btn bp" onclick="runAI()" id="aiB">✦ Analyze</button></div>
+  <div class="qs"><span style="font-size:11px;color:var(--text2);padding:4px 0">Try:</span><button class="qs-btn" onclick="document.getElementById('aiIn').value='ChatGPT';runAI()">ChatGPT</button><button class="qs-btn" onclick="document.getElementById('aiIn').value='GitHub Copilot';runAI()">Copilot</button><button class="qs-btn" onclick="document.getElementById('aiIn').value='Midjourney';runAI()">Midjourney</button><button class="qs-btn" onclick="document.getElementById('aiIn').value='Clearview AI';runAI()">Clearview AI</button><button class="qs-btn" onclick="document.getElementById('aiIn').value='Workday AI Hiring';runAI()">Workday AI</button></div>
+  <div class="rl-bar" id="rlBar"></div>
+  <div id="aiE" class="err" style="display:none"></div></div>
+  <div id="aiCfg">
+    <div class="cd config-section"><h2>What industry?</h2><div class="chips" id="iC"></div></div>
+    <div class="cd config-section"><h2>Where do you operate?</h2><div style="display:flex;gap:6px;margin-bottom:6px"><button class="btn bo bs" onclick="aS()">All</button><button class="btn bo bs" onclick="cS()">Clear</button></div><div class="sg" id="sG"></div></div>
+    <div class="cd config-section"><h2>International?</h2><div class="chips" id="nC"></div></div>
+    <div class="cd config-section"><h2>Memo format & letterhead</h2><div class="chips" id="mC"></div><div class="lg"><input placeholder="Firm Name" id="lF"/><input placeholder="Attorney" id="lA"/><input placeholder="Title" id="lT"/><input placeholder="Logo URL" id="lL"/></div></div>
+  </div>
+  <div id="aiR"></div>
+</div>
 
-The JSON must follow this exact schema:
-{
-  "tool_name": "string",
-  "summary": "string (2-3 sentence executive summary of key liability exposure)",
-  "buckets": [
-    {
-      "category": "string (e.g. IP & Copyright, Data Privacy, Consumer Protection & FTC, Products Liability, Employment & Labor, Algorithmic Bias & Civil Rights, National Security & Export Controls, Contracts & ToS Enforceability)",
-      "issues": ["string array of specific issues"],
-      "severity": "High|Medium|Low"
-    }
-  ],
-  "state_laws": [
-    {
-      "state": "string",
-      "law": "string (statute name and code)",
-      "relevance": "string (1-2 sentences)"
-    }
-  ],
-  "sources": [
-    {
-      "title": "string",
-      "citation": "string",
-      "url": "string (real URL if known, else empty string)"
-    }
-  ],
-  "recommendation": "string (clear product counsel recommendation: Proceed, Proceed with Guardrails, or Do Not Deploy — with 2-3 sentence legal reasoning)"
-}
+<div id="tab-ip" style="display:none">
+  <div class="cd"><h2>Search trademarks, patents & copyrights</h2><div class="irow"><select id="ipT" onchange="uP()"><option value="trademark">Trademark</option><option value="patent">Patent</option><option value="copyright">Copyright</option></select><input type="text" id="ipQ" placeholder="Trademark name or serial #..." onkeydown="if(event.key==='Enter')runIP()"/><button class="btn bp" onclick="runIP()" id="ipB">✦ Search</button></div><div id="ipE" class="err" style="display:none"></div></div>
+  <div id="ipR"></div>
+</div>
 
-Be thorough. Cover at minimum 5 legal buckets. Include at least 6 state law entries covering IL BIPA, TX CUBI, CO AI Act, CA CCPA/CPRA, NY Local Law 144 if applicable, and EU AI Act where relevant. Include at least 5 real sources with accurate citations.`;
-
-const EMAIL_SYSTEM=`You are a senior product counsel writing an internal legal memo. Draft a professional internal email in CREAC format (Conclusion, Rule, Explanation, Application, Conclusion) to a supervisor summarizing AI tool legal risk analysis. Use formal but clear language. Return ONLY the email text, no JSON, no markdown. Format it as a proper email with To/From/Subject/Date header, then the CREAC body.`;
-
-function Badge({severity}){
-  const cls=severity==='High'?'badge-high':severity==='Medium'?'badge-medium':'badge-low';
-  return <span className={`badge ${cls}`}>{severity}</span>;
-}
-
-function App(){
-  const[tool,setTool]=useState('');
-  const[loading,setLoading]=useState(false);
-  const[emailLoading,setEmailLoading]=useState(false);
-  const[error,setError]=useState('');
-  const[result,setResult]=useState(null);
-  const[email,setEmail]=useState('');
-  const[showModal,setShowModal]=useState(false);
-  const[copied,setCopied]=useState(false);
-
-  async function analyze(){
-    if(!tool.trim())return;
-    setLoading(true);setError('');setResult(null);
-    try{
-      const res=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model:'claude-sonnet-4-20250514',
-          max_tokens:3000,
-          system:SYSTEM_PROMPT,
-          messages:[{role:'user',content:`Analyze the AI tool: ${tool}`}]
-        })
-      });
-      const data=await res.json();
-      const raw=data.content?.map(b=>b.text||'').join('');
-      const clean=raw.replace(/```json|```/g,'').trim();
-      const parsed=JSON.parse(clean);
-      setResult(parsed);
-    }catch(e){
-      setError('Analysis failed. Please check your connection and try again.');
-    }
-    setLoading(false);
-  }
-
-  async function generateEmail(){
-    if(!result)return;
-    setEmailLoading(true);
-    try{
-      const prompt=`Generate a CREAC-format internal email to my supervisor about the following AI tool legal analysis:\n\nTool: ${result.tool_name}\nSummary: ${result.summary}\nRecommendation: ${result.recommendation}\nLegal Buckets: ${result.buckets.map(b=>`${b.category} (${b.severity}): ${b.issues.join('; ')}`).join('\n')}\nState Laws: ${result.state_laws.map(s=>`${s.state} - ${s.law}: ${s.relevance}`).join('\n')}\nSources: ${result.sources.map(s=>`${s.title} (${s.citation})`).join('; ')}`;
-      const res=await fetch('https://api.anthropic.com/v1/messages',{
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({
-          model:'claude-sonnet-4-20250514',
-          max_tokens:2000,
-          system:EMAIL_SYSTEM,
-          messages:[{role:'user',content:prompt}]
-        })
-      });
-      const data=await res.json();
-      const text=data.content?.map(b=>b.text||'').join('');
-      setEmail(text);setShowModal(true);
-    }catch(e){
-      setError('Email generation failed.');
-    }
-    setEmailLoading(false);
-  }
-
-  function copyEmail(){
-    navigator.clipboard.writeText(email);
-    setCopied(true);setTimeout(()=>setCopied(false),2000);
-  }
-
-  const recVerdict=result?.recommendation?.toLowerCase().includes('do not')?'Do Not Deploy':
-    result?.recommendation?.toLowerCase().includes('guardrails')?'Proceed with Guardrails':'Proceed';
-  const recColor=recVerdict==='Do Not Deploy'?'#7a0000':recVerdict==='Proceed with Guardrails'?'#633806':'#27500A';
-
-  return(
-    <div className="app">
-      <div className="header">
-        <div style={{display:'inline-block',background:'#1a2a4a',color:'#c8a96e',padding:'5px 14px',borderRadius:'4px',fontSize:'11px',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:'14px'}}>Product Counsel Tool</div>
-        <h1 className="serif">AI Tool Legal Issue Spotter</h1>
-        <p>Enter an AI tool or application name to analyze legal liabilities across federal and state law</p>
-      </div>
-      <div className="rule"/>
-
-      <div className="search-card">
-        <div className="search-row">
-          <input
-            value={tool}
-            onChange={e=>setTool(e.target.value)}
-            onKeyDown={e=>e.key==='Enter'&&analyze()}
-            placeholder="e.g. ChatGPT, GitHub Copilot, Midjourney, Workday AI..."
-          />
-          <button className="btn-primary" onClick={analyze} disabled={loading||!tool.trim()}>
-            {loading?<span className="spinner"/>:'Analyze'}
-          </button>
-        </div>
-        {error&&<div className="error-box">{error}</div>}
-      </div>
-
-      {result&&<>
-        <div className="section">
-          <div className="section-title">Executive Summary</div>
-          <div className="summary-card">
-            <p style={{fontFamily:'Libre Baskerville,serif',fontSize:'15px',fontWeight:700,marginBottom:'8px'}}>{result.tool_name}</p>
-            <p>{result.summary}</p>
-          </div>
-        </div>
-
-        <div className="section">
-          <div className="section-title">Legal Risk Buckets</div>
-          <div className="bucket-grid">
-            {result.buckets?.map((b,i)=>(
-              <div key={i} className="bucket-card">
-                <div className="bucket-header">
-                  <div className="bucket-name">{b.category}</div>
-                  <Badge severity={b.severity}/>
-                </div>
-                <ul className="bucket-issues">
-                  {b.issues?.map((iss,j)=><li key={j}>{iss}</li>)}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="section">
-          <div className="section-title">Applicable State &amp; Federal Laws</div>
-          <table className="state-table">
-            <thead>
-              <tr><th>Jurisdiction</th><th>Statute</th><th>Relevance</th></tr>
-            </thead>
-            <tbody>
-              {result.state_laws?.map((s,i)=>(
-                <tr key={i}>
-                  <td>{s.state}</td>
-                  <td>{s.law}</td>
-                  <td>{s.relevance}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="section">
-          <div className="section-title">Cited Sources</div>
-          <div className="sources-list">
-            {result.sources?.map((s,i)=>(
-              <div key={i} className="source-item">
-                {s.url?<a href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a>:<span style={{fontSize:'13px',fontWeight:500}}>{s.title}</span>}
-                <p>{s.citation}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="section" style={{marginBottom:'3rem'}}>
-          <div className="section-title">Product Counsel Recommendation</div>
-          <div className="rec-card">
-            <div className="rec-label" style={{color:recColor}}>{recVerdict}</div>
-            <div className="rec-text">{result.recommendation}</div>
-            <div className="rec-actions">
-              <button className="btn-primary" onClick={generateEmail} disabled={emailLoading}>
-                {emailLoading?<span className="spinner"/>:'Confirm & Generate Supervisor Email'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </>}
-
-      {showModal&&(
-        <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
-          <div className="modal">
-            <div className="modal-header">
-              <span className="modal-title serif">Supervisor Email — CREAC Format</span>
-              <button className="modal-close" onClick={()=>setShowModal(false)}>&#x2715;</button>
-            </div>
-            <div className="email-body">{email}</div>
-            <div className="modal-footer">
-              {copied&&<span className="copied">Copied!</span>}
-              <button className="btn-outline" onClick={()=>setShowModal(false)}>Close</button>
-              <button className="btn-primary" onClick={copyEmail}>Copy to Clipboard</button>
-            </div>
-          </div>
-        </div>
-      )}
+<div id="tab-history" style="display:none">
+  <div class="hiw">
+    <h3>How It Works</h3>
+    <div class="hiw-steps">
+      <div class="hiw-step"><div class="num">1</div><div class="lbl">Enter a query — AI tool, trademark, patent, or copyright</div></div>
+      <div class="hiw-step"><div class="num">2</div><div class="lbl">Live USPTO & PatentsView APIs fetch real registration data</div></div>
+      <div class="hiw-step"><div class="num">3</div><div class="lbl">Gemini AI analyzes with Google Search for current enforcement actions</div></div>
+      <div class="hiw-step"><div class="num">4</div><div class="lbl">Results rendered with risk scores, compliance deadlines & citations</div></div>
+      <div class="hiw-step"><div class="num">5</div><div class="lbl">Generate a formal memo, export PDF, or email directly</div></div>
     </div>
-  );
+  </div>
+
+  <!-- Risk comparison chart -->
+  <div id="riskChart" class="cd" style="display:none">
+    <h2 style="font-family:'Playfair Display',serif;font-size:15px;color:var(--deep);margin-bottom:.5rem">Risk Comparison</h2>
+    <div class="rchart" id="rChartBars"></div>
+    <div style="display:flex;gap:8px;justify-content:center" id="rChartLabels"></div>
+  </div>
+
+  <!-- Comparison mode -->
+  <div class="cd" id="cmpPanel" style="display:none">
+    <h2 style="font-family:'Playfair Display',serif;font-size:15px;color:var(--deep);margin-bottom:.5rem">Compare Two Analyses</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <select id="cmpA" class="irow" style="padding:8px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:12px;background:var(--blush)" onchange="runCmp()"><option value="">Select first...</option></select>
+      <select id="cmpB" class="irow" style="padding:8px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:12px;background:var(--blush)" onchange="runCmp()"><option value="">Select second...</option></select>
+    </div>
+    <div id="cmpResult"></div>
+  </div>
+
+  <div class="hp">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem">
+      <h2 style="font-family:'Playfair Display',serif;font-size:15px;color:var(--deep);margin:0">Search History</h2>
+      <div style="display:flex;gap:6px">
+        <button class="btn bo bs" onclick="exportHistory()">Export JSON</button>
+        <button class="btn bo bs" onclick="clH()">Clear All</button>
+      </div>
+    </div>
+    <div id="hL"><p style="font-size:12px;color:var(--text2);font-style:italic">No searches yet.</p></div>
+  </div>
+</div>
+
+<!-- Dark mode toggle -->
+<div class="dm-toggle" onclick="toggleDark()" title="Toggle dark mode" role="button" aria-label="Toggle dark mode">🌙</div>
+
+<div class="disc">⚖️ Not legal advice. AI analysis supplemented with <strong>live USPTO data</strong>. Verify at <a href="https://www.uspto.gov" target="_blank">USPTO.gov</a> and <a href="https://www.copyright.gov" target="_blank">Copyright.gov</a>. <br/>Press <kbd style="background:var(--rose);padding:1px 5px;border-radius:4px;font-size:10px">Ctrl+Enter</kbd> to analyze.</div>
+</div>
+
+<script>
+let sI=null,sS=[],sMF='creac',sN=[];
+const IND=[{id:'healthcare',l:'Healthcare',o:'HIPAA, FDA SaMD'},{id:'finance',l:'Finance',o:'GLBA, FCRA, ECOA'},{id:'education',l:'Education',o:'FERPA, COPPA'},{id:'hr',l:'HR / Hiring',o:'EEOC, NYC LL 144'},{id:'consumer',l:'Consumer',o:'FTC §5, CCPA'},{id:'government',l:'Government',o:'OMB M-24-10'},{id:'legal',l:'Legal',o:'Model Rules'},{id:'other',l:'Other',o:'General'}];
+const STS=['AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA','HI','ID','IL','IN','IA','KS','KY','LA','ME','MD','MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ','NM','NY','NC','ND','OH','OK','OR','PA','RI','SC','SD','TN','TX','UT','VT','VA','WA','WV','WI','WY'];
+const NTL=[{id:'eu',l:'EU',o:'EU AI Act, GDPR'},{id:'uk',l:'UK',o:'UK AI Safety'},{id:'ca',l:'Canada',o:'AIDA, PIPEDA'},{id:'au',l:'Australia',o:'AI Ethics'},{id:'other',l:'Other',o:''}];
+const MF=[{id:'creac',l:'CREAC'},{id:'irac',l:'IRAC'},{id:'issue_memo',l:'Issue Memo'},{id:'client_advisory',l:'Client Advisory'},{id:'due_diligence',l:'Due Diligence'}];
+
+document.getElementById('iC').innerHTML=IND.map(i=>`<div class="ch" data-id="${i.id}" onclick="tI('${i.id}')">${i.l}<small>${i.o}</small></div>`).join('');
+document.getElementById('sG').innerHTML=STS.map(s=>`<div class="sc" data-s="${s}" onclick="tS('${s}')">${s}</div>`).join('');
+document.getElementById('nC').innerHTML=NTL.map(i=>`<div class="ch" data-id="${i.id}" onclick="tN('${i.id}')">${i.l}<small>${i.o}</small></div>`).join('');
+document.getElementById('mC').innerHTML=MF.map(f=>`<div class="ch ${f.id==='creac'?'on':''}" data-f="${f.id}" onclick="sMf('${f.id}')">${f.l}</div>`).join('');
+
+function tI(id){sI=sI===id?null:id;document.querySelectorAll('#iC .ch').forEach(c=>c.classList.toggle('on',c.dataset.id===sI));}
+function tS(s){const i=sS.indexOf(s);if(i>=0)sS.splice(i,1);else sS.push(s);document.querySelectorAll('#sG .sc').forEach(c=>c.classList.toggle('on',sS.includes(c.dataset.s)));}
+function aS(){sS=[...STS];document.querySelectorAll('#sG .sc').forEach(c=>c.classList.add('on'));}
+function cS(){sS=[];document.querySelectorAll('#sG .sc').forEach(c=>c.classList.remove('on'));}
+function tN(id){const i=sN.indexOf(id);if(i>=0)sN.splice(i,1);else sN.push(id);document.querySelectorAll('#nC .ch').forEach(c=>c.classList.toggle('on',sN.includes(c.dataset.id)));}
+function sMf(id){sMF=id;document.querySelectorAll('#mC .ch').forEach(c=>c.classList.toggle('on',c.dataset.f===id));}
+
+function gM(){return document.getElementById('matterNum').value.trim()||'N/A';}
+function sT(t){['ai','ip','history'].forEach(id=>{document.getElementById('tab-'+id).style.display=id===t?'block':'none';});document.querySelectorAll('.tab').forEach((e,i)=>{e.classList.toggle('a',['ai','ip','history'][i]===t);});if(t==='history')rH();}
+function uP(){const t=document.getElementById('ipT').value;document.getElementById('ipQ').placeholder={trademark:'Trademark name or serial #...',patent:'Patent # or keyword...',copyright:'Title, author, or reg #...'}[t];}
+function e(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function sB(s){return`<span class="b ${s==='High'?'bh':s==='Medium'?'bm':'bl'}">${s||'N/A'}</span>`;}
+function stB(s){if(!s)return'';const l=s.toLowerCase();if(/live|registered|active|granted/.test(l))return`<span class="b bok">${s}</span>`;if(/pending|publish|filed/.test(l))return`<span class="b bpe">${s}</span>`;if(/dead|abandon|cancel|expired/.test(l))return`<span class="b bde">${s}</span>`;return`<span class="b bo2">${s}</span>`;}
+function rD(sc){const p=Math.min(100,Math.max(0,sc)),r=40,c=2*Math.PI*r,f=(p/100)*c,co=p>=75?'#E8006E':p>=45?'#F5A623':'#2DB866',tc=p>=75?'#8A0030':p>=45?'#7A4000':'#1A6030';return`<div class="rd"><svg width="94" height="94" viewBox="0 0 94 94"><circle cx="47" cy="47" r="${r}" fill="none" stroke="#FFE4EF" stroke-width="8"/><circle cx="47" cy="47" r="${r}" fill="none" stroke="${co}" stroke-width="8" stroke-dasharray="${f} ${c}" stroke-linecap="round"/></svg><div class="rdn"><span style="color:${tc}">${p}</span><span>/ 100</span></div></div>`;}
+
+function gK(){return document.getElementById('gKey').value.trim();}
+async function cC(sys,usr,ws=false){
+  const key=gK();if(!key)throw new Error('Please enter your Gemini API key above.');
+  const parts=[{text:sys+'\n\n'+usr}];
+  const body={contents:[{parts}],generationConfig:{temperature:0.1,maxOutputTokens:8192}};
+  if(ws)body.tools=[{googleSearchRetrieval:{}}];
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(d.error)throw new Error('Gemini: '+(d.error.message||JSON.stringify(d.error)));
+  return d.candidates?.[0]?.content?.parts?.[0]?.text||'';
 }
-ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+async function cJ(s,u,w=false){
+  let raw=await cC(s,u,w);
+  raw=raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  try{JSON.parse(raw);return raw;}catch(e){
+    // retry once on bad JSON
+    raw=await cC(s+'\nCRITICAL: Return ONLY valid JSON. No text before or after.',u,w);
+    return raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  }
+}
+async function fTM(q){
+  let d=null,s='',assigns=null;
+  const isSer=/^\d{7,8}$/.test(q.replace(/-/g,''));
+  // Try TSDR for serial number lookup
+  if(isSer){
+    try{const r=await fetch(`https://tsdrapi.uspto.gov/ts/cd/casestatus/sn${q.replace(/-/g,'')}/info.json`,{headers:{Accept:'application/json'}});if(r.ok){d=await r.json();s='USPTO TSDR API (live serial lookup)';}}catch(e){console.warn('TSDR CORS blocked — will use Gemini grounding');}
+  }
+  // Try keyword search
+  if(!d){
+    try{const r=await fetch(`https://developer.uspto.gov/api/v1/trademark/search?searchText=${encodeURIComponent(q)}&rows=5`,{headers:{Accept:'application/json'}});if(r.ok){d=await r.json();s='USPTO Trademark Search API (live)';}}catch(e){console.warn('USPTO search CORS blocked');}
+  }
+  // Try assignment lookup
+  try{const r=await fetch(`https://developer.uspto.gov/api/v1/trademark/assignment?assignee=${encodeURIComponent(q)}&rows=3`,{headers:{Accept:'application/json'}});if(r.ok){assigns=await r.json();}}catch(e){}
+  return{data:d,source:s,assignments:assigns};
+}
+async function fPT(q){
+  let d=null,s='';
+  const n=q.replace(/[,\s]/g,'');
+  const isN=/^\d/.test(n);
+  // Direct patent lookup
+  if(isN){
+    try{const r=await fetch(`https://search.patentsview.org/api/v1/patent/${n}/?f=patent_number,patent_title,patent_date,patent_abstract,patent_num_claims,assignee_organization,inventor_first_name,inventor_last_name,patent_type`,{headers:{Accept:'application/json'}});if(r.ok){d=await r.json();s='PatentsView API (live patent lookup)';}}catch(e){console.warn('PatentsView CORS blocked');}
+  }
+  // Keyword search
+  if(!d){
+    try{const r=await fetch(`https://search.patentsview.org/api/v1/patent/?q={"_text_any":{"patent_abstract":"${q}"}}&f=patent_number,patent_title,patent_date,patent_abstract,assignee_organization,patent_num_claims&o={"size":5}`,{headers:{Accept:'application/json'}});if(r.ok){d=await r.json();s='PatentsView Search (live)';}}catch(e){console.warn('PatentsView search CORS blocked');}
+  }
+  return{data:d,source:s};
+}
+// Status indicator for API results
+function apiStatus(source){
+  if(source&&source.includes('live'))return '<span class="lb lb-l">Live USPTO Data</span>';
+  return '<span class="lb lb-w">AI + Google Search</span>';
+}
+
+function gH(){try{return JSON.parse(localStorage.getItem('lbH')||'[]');}catch{return[];}}
+function svH(item){const h=gH();h.unshift({...item,id:Date.now(),date:new Date().toLocaleDateString()});localStorage.setItem('lbH',JSON.stringify(h.slice(0,50)));}
+function rH(){const h=gH(),el=document.getElementById('hL');if(!h.length){el.innerHTML='<p style="font-size:12px;color:var(--text2);font-style:italic">No searches yet 💅</p>';return;}el.innerHTML=`<div class="hl">${h.map(i=>{const c=i.score>=75?'#8A0030':i.score>=45?'#7A4000':'#1A6030';return`<div class="hi" onclick="ldH(${i.id})"><div><div class="hn">${e(i.name)}</div><div class="hm">${i.type} · ${i.date}${i.live?' · <span class="lb lb-l">Live</span>':''}</div></div><div style="display:flex;align-items:center;gap:8px">${i.score!=null?`<span style="font-size:14px;font-weight:700;color:${c}">${i.score}</span>`:''}<button class="hd" onclick="event.stopPropagation();dH(${i.id})">✕</button></div></div>`;}).join('')}</div>`;}
+function dH(id){localStorage.setItem('lbH',JSON.stringify(gH().filter(i=>i.id!==id)));rH();}
+function clH(){if(confirm('Clear all?')){localStorage.removeItem('lbH');rH();}}
+function ldH(id){const i=gH().find(x=>x.id===id);if(!i||!i.html)return;if(i.type==='AI Tool'){sT('ai');document.getElementById('aiIn').value=i.name;document.getElementById('aiR').innerHTML=i.html;document.getElementById('aiCfg').style.display='none';}else{sT('ip');document.getElementById('ipQ').value=i.name;document.getElementById('ipR').innerHTML=i.html;}}
+
+function xPDF(title,cid){const{jsPDF}=window.jspdf;const doc=new jsPDF('p','mm','a4');const m=gM(),pw=doc.internal.pageSize.getWidth(),mg=18;let y=mg;doc.setFillColor(255,20,147);doc.rect(0,0,pw,16,'F');doc.setTextColor(255);doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('THE ESQ. — CONFIDENTIAL',mg,10.5);doc.text('Matter: '+m,pw-mg,10.5,{align:'right'});y=24;doc.setTextColor(139,0,69);doc.setFontSize(16);doc.setFont('helvetica','bold');const tl=doc.splitTextToSize(title,pw-mg*2);doc.text(tl,mg,y);y+=tl.length*7+4;doc.setFontSize(9);doc.setTextColor(192,96,144);doc.setFont('helvetica','normal');doc.text('Generated: '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),mg,y);y+=6;const el=document.getElementById(cid);if(el){el.querySelectorAll('.st, .sc2, .bc, .rc, .dt td, p, li').forEach(s=>{const t=s.innerText||'';if(!t.trim())return;if(s.classList.contains('st')){y+=3;doc.setFontSize(9);doc.setFont('helvetica','bold');doc.setTextColor(192,96,144);doc.text(t.toUpperCase(),mg,y);y+=5;}else{doc.setFontSize(9);doc.setFont('helvetica','normal');doc.setTextColor(58,0,40);doc.splitTextToSize(t.replace(/\n+/g,' ').trim(),pw-mg*2).forEach(l=>{if(y>272){doc.addPage();y=18;}doc.text(l,mg,y);y+=4.5;});y+=1;}});}doc.save(title.replace(/[^a-z0-9]/gi,'_').toLowerCase()+'.pdf');}
+
+// ═══ AI ANALYSIS ═══
+async function runAI(){
+  const tool=document.getElementById('aiIn').value.trim();if(!tool)return;
+  const btn=document.getElementById('aiB'),err=document.getElementById('aiE'),res=document.getElementById('aiR');
+  btn.innerHTML='<span class="sp"></span> Analyzing...';btn.disabled=true;err.style.display='none';res.innerHTML='';
+  document.getElementById('aiCfg').style.display='none';
+  try{
+    const ind=sI?IND.find(i=>i.id===sI):null;const stL=sS.length?sS.join(', '):'All 50 states';const intL=sN.length?sN.map(id=>NTL.find(i=>i.id===id)?.l).join(', '):'';
+    const sys=`You are senior product counsel at a top AmLaw 100 firm. USE WEB SEARCH for current info about this tool. Return ONLY valid JSON:
+{"tool_name":"","risk_score":0,"risk_score_rationale":"","summary":"(4 sentences, specific statutes, dollar consequences)","overall_risk":"High|Medium|Low",
+"data_flow":{"inputs":"","processing":"","storage":"","outputs":"","third_parties":"","cross_border":"","training_use":""},
+"enforcement_history":["specific actions against THIS tool"],
+"buckets":[{"category":"","severity":"High|Medium|Low","confidence":"High|Medium|Low","issues":["with statutes"],"key_case_or_rule":"","mitigation":""}],
+"state_laws":[{"state":"","law":"full citation","specific_risk":"","penalty":"dollar amount","compliance_action":""}],
+${intL?'"international_exposure":[{"jurisdiction":"","law":"","risk":"","penalty":"","action":""}],':''}
+"contract_risks":["ToS red flags"],
+"vendor_security":{"soc2":"","iso27001":"","encryption":"","breach_history":""},
+"transparency_compliance":{"model_card":"","ab2013":"","eu_ai_act":"","training_data_disclosure":""},
+"dollar_exposure":{"statutory_min":"","statutory_max":"","realistic_settlement":"","class_action_risk":"","insurance_recommendation":""},
+"comparable_cases":[{"case_name":"","outcome":"","damages":"","relevance":""}],
+"compliance_calendar":[{"date":"","obligation":"","statute":"","consequence":""}],
+"opposing_counsel":["arguments they would make"],
+"pending_legislation":["bills to watch"],
+"recent_developments":["2024-2026"],
+"sources":[{"title":"","citation":"","url":"","relevance":""}],
+"recommendation":"PROCEED|PROCEED WITH GUARDRAILS|DO NOT DEPLOY + reasoning",
+"recommendation_level":"proceed|guardrails|do_not_deploy",
+"immediate_actions":[],"short_term_actions":[],"long_term_actions":[],
+"verification_checklist":["must verify"],
+"executive_summary":"2 sentences for CEO, no jargon",
+"privilege_note":""}
+Buckets: IP & Copyright, Data Privacy, Consumer Protection, Products Liability, Employment, Algorithmic Bias, National Security, Contracts${ind?', '+ind.o:''}. States: ${stL}.${intL?' International: '+intL+'.':''} BE SPECIFIC.`;
+
+    const json=await cJ(sys,`Analyze: "${tool}"${ind?' ('+ind.l+')':''}`,true);
+    const d=JSON.parse(json);const sc=d.risk_score||50;
+    const rl=d.recommendation_level||'guardrails';
+    const rc2=rl==='do_not_deploy'?'#8A0030':rl==='guardrails'?'#7A4000':'#1A6030';
+    const rLb=rl==='do_not_deploy'?'DO NOT DEPLOY':rl==='guardrails'?'PROCEED WITH GUARDRAILS':'PROCEED';
+    const hm=(d.buckets||[]).map(b=>({n:b.category,s:b.severity}));
+
+    const html=`<div id="aiRC">
+    <div class="aud"><button class="ab on" onclick="shA('full',this)">📋 Full Analysis</button><button class="ab" onclick="shA('exec',this)">👔 Executive Summary</button></div>
+    <div id="a-exec" style="display:none"><div class="cd" style="border-color:var(--gold);background:linear-gradient(135deg,#FFF8E7,#fff)"><div class="rw">${rD(sc)}<div><h3 style="font-family:'Playfair Display',serif;font-size:17px;color:var(--deep)">${e(d.tool_name||tool)}</h3><p style="font-size:14px;line-height:1.8;margin-top:8px">${e(d.executive_summary||d.summary||'')}</p></div></div><div class="rc" style="background:#FFF8E7;border-color:var(--gold)"><div class="rv" style="color:${rc2}">⚖ ${rLb}</div><div class="rt">${e(d.recommendation||'')}</div></div>${d.dollar_exposure?`<div class="ig" style="margin-top:1rem">${[['Max Exposure',d.dollar_exposure.statutory_max,'#8A0030'],['Settlement',d.dollar_exposure.realistic_settlement,''],['Insurance',d.dollar_exposure.insurance_recommendation,'']].map(([l,v,c])=>`<div class="is" style="background:#FFF8E7"><div class="il">${l}</div><div class="iv"${c?' style="color:'+c+'"':''}>${e(v||'N/A')}</div></div>`).join('')}</div>`:''}</div></div>
+
+    <div id="a-full">
+    <div class="cd"><div class="rw">${rD(sc)}<div><h3 style="font-family:'Playfair Display',serif;font-size:17px;color:var(--deep)">${e(d.tool_name||tool)} <span class="lb lb-w">AI + Web</span></h3><p style="font-size:12px;color:var(--text2);margin-bottom:6px">Risk: ${sc}/100 · Matter: ${gM()} · ${new Date().toLocaleDateString()}</p><p style="font-size:13px;line-height:1.6">${e(d.risk_score_rationale||'')}</p></div></div><div class="sc2"><p style="font-size:14px;line-height:1.7">${e(d.summary||'')}</p></div></div>
+
+    ${d.data_flow?`<div class="st">Data Flow Map</div><div class="cd">${Object.entries(d.data_flow).map(([k,v])=>`<div class="df"><div class="dfn" style="min-width:90px;text-align:center">${k.replace(/_/g,' ')}</div><div class="dfa">→</div><div style="font-size:12px;flex:1;line-height:1.5">${e(v)}</div></div>`).join('')}</div>`:''}
+
+    ${d.enforcement_history?.length?`<div class="st">⚠️ Enforcement History</div><div class="cd" style="border-color:#FFB0CC"><ul style="padding-left:15px">${d.enforcement_history.map(x=>`<li style="font-size:13px;color:#8A0030;line-height:1.65;margin-bottom:4px;font-weight:500">${e(x)}</li>`).join('')}</ul></div>`:''}
+
+    <div class="st">Risk Heat Map</div><div class="cd">${hm.map(c=>`<div class="hm-row"><div class="hm-l">${e(c.n)}</div><div class="hm-c ${c.s==='High'?'hm-h':c.s==='Medium'?'hm-m':'hm-l2'}" style="max-width:${c.s==='High'?'95':c.s==='Medium'?'65':'35'}%">${c.s}</div></div>`).join('')}</div>
+
+    <div class="st">Liability Buckets</div><div class="bg2">${(d.buckets||[]).map(b=>`<div class="bc"><div class="bh2"><div class="bn">${e(b.category)}</div>${sB(b.severity)}</div><ul class="bi">${(b.issues||[]).map(i=>`<li>${e(i)}</li>`).join('')}</ul>${b.key_case_or_rule?`<div style="margin-top:6px;padding:5px 8px;background:var(--blush);border-radius:8px;font-size:11px;color:var(--deep)"><b>Key:</b> ${e(b.key_case_or_rule)}</div>`:''}${b.mitigation?`<div style="margin-top:4px;font-size:11px;color:#1A6030;padding:4px 8px;background:#E8F5E0;border-radius:8px"><b>Mitigate:</b> ${e(b.mitigation)}</div>`:''}</div>`).join('')}</div>
+
+    <div class="st">State & Federal Laws</div><table class="dt"><thead><tr><th>Jurisdiction</th><th>Statute</th><th>Risk</th><th>Penalty</th><th>Action</th></tr></thead><tbody>${(d.state_laws||[]).map(s=>`<tr><td>${e(s.state)}</td><td><em>${e(s.law)}</em></td><td>${e(s.specific_risk)}</td><td style="color:#8A0030;font-weight:600">${e(s.penalty||'N/A')}</td><td>${e(s.compliance_action)}</td></tr>`).join('')}</tbody></table>
+
+    ${d.international_exposure?.length?`<div class="st">International</div><table class="dt"><thead><tr><th>Jurisdiction</th><th>Law</th><th>Risk</th><th>Penalty</th><th>Action</th></tr></thead><tbody>${d.international_exposure.map(i=>`<tr><td>${e(i.jurisdiction)}</td><td>${e(i.law)}</td><td>${e(i.risk)}</td><td style="color:#8A0030">${e(i.penalty)}</td><td>${e(i.action)}</td></tr>`).join('')}</tbody></table>`:''}
+
+    ${d.contract_risks?.length?`<div class="st">Contract Red Flags</div><div class="cd"><ul style="padding-left:15px">${d.contract_risks.map(r=>`<li style="font-size:12px;color:var(--deep);line-height:1.65;margin-bottom:3px">${e(r)}</li>`).join('')}</ul></div>`:''}
+
+    ${d.vendor_security?`<div class="st">Vendor Security</div><div class="ig">${[['SOC 2',d.vendor_security.soc2],['ISO 27001',d.vendor_security.iso27001],['Encryption',d.vendor_security.encryption],['Breaches',d.vendor_security.breach_history]].map(([l,v])=>`<div class="is"><div class="il">${l}</div><div class="iv">${e(v||'Unknown')}</div></div>`).join('')}</div>`:''}
+
+    ${d.transparency_compliance?`<div class="st">Transparency Compliance</div><div class="ig">${[['Model Card',d.transparency_compliance.model_card],['CA AB 2013',d.transparency_compliance.ab2013],['EU AI Act',d.transparency_compliance.eu_ai_act],['Training Data',d.transparency_compliance.training_data_disclosure]].map(([l,v])=>`<div class="is"><div class="il">${l}</div><div class="iv">${e(v||'Unknown')}</div></div>`).join('')}</div>`:''}
+
+    ${d.dollar_exposure?`<div class="st">💰 Financial Exposure</div><div class="ig">${[['Min',d.dollar_exposure.statutory_min],['Max',d.dollar_exposure.statutory_max],['Settlement',d.dollar_exposure.realistic_settlement],['Class Action',d.dollar_exposure.class_action_risk],['Insurance',d.dollar_exposure.insurance_recommendation]].map(([l,v])=>`<div class="is"><div class="il">${l}</div><div class="iv">${e(v||'N/A')}</div></div>`).join('')}</div>`:''}
+
+    ${d.comparable_cases?.length?`<div class="st">Comparable Cases</div><table class="dt"><thead><tr><th>Case</th><th>Outcome</th><th>Damages</th><th>Relevance</th></tr></thead><tbody>${d.comparable_cases.map(c=>`<tr><td><em>${e(c.case_name)}</em></td><td>${e(c.outcome)}</td><td style="color:#8A0030;font-weight:600">${e(c.damages)}</td><td>${e(c.relevance)}</td></tr>`).join('')}</tbody></table>`:''}
+
+    ${d.compliance_calendar?.length?`<div class="st">📅 Compliance Calendar</div><div class="cd">${d.compliance_calendar.map(c=>`<div class="ci"><div class="cid">${e(c.date)}</div><div class="cib"><div class="cio">${e(c.obligation)}</div><div class="cis">${e(c.statute)}</div><div class="cir">If missed: ${e(c.consequence)}</div></div></div>`).join('')}</div>`:''}
+
+    ${d.opposing_counsel?.length?`<div class="st">🗣️ Opposing Counsel Arguments</div><div class="cd"><ul style="padding-left:15px">${d.opposing_counsel.map(a=>`<li style="font-size:12px;color:var(--deep);line-height:1.65;margin-bottom:4px">${e(a)}</li>`).join('')}</ul></div>`:''}
+
+    ${d.pending_legislation?.length?`<div class="st">📋 Pending Legislation</div><div class="cd"><ul style="padding-left:15px">${d.pending_legislation.map(l=>`<li style="font-size:12px;line-height:1.65;margin-bottom:3px">${e(l)}</li>`).join('')}</ul></div>`:''}
+
+    ${d.recent_developments?.length?`<div class="st">Recent Developments</div><div class="cd"><ul style="padding-left:15px">${d.recent_developments.map(r=>`<li style="font-size:12px;line-height:1.65;margin-bottom:3px">${e(r)}</li>`).join('')}</ul></div>`:''}
+
+    <div class="st">Sources</div><div class="sr">${(d.sources||[]).map(s=>`<div class="si">${s.url?`<a href="${e(s.url)}" target="_blank">${e(s.title)} ↗</a>`:`<span>${e(s.title)}</span>`}<p>${e(s.citation)}${s.relevance?' — '+e(s.relevance):''}</p></div>`).join('')}</div>
+
+    <div class="st">Recommendation</div><div class="rc"><div class="rv" style="color:${rc2}">⚖ ${rLb}</div><div class="rt">${e(d.recommendation||'')}</div>${d.privilege_note?`<div style="margin-top:8px;padding:7px 10px;background:var(--blush);border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--deep)"><b>Privilege:</b> ${e(d.privilege_note)}</div>`:''}</div>
+
+    <div class="st">Action Plan</div><div class="bg2">
+    ${d.immediate_actions?.length?`<div class="bc" style="border-color:#FFE0EC"><div class="bh2"><div class="bn" style="color:#8A0030">🔴 Immediate</div></div><ul class="bi">${d.immediate_actions.map(a=>`<li>${e(a)}</li>`).join('')}</ul></div>`:''}
+    ${d.short_term_actions?.length?`<div class="bc" style="border-color:#FFF0E0"><div class="bh2"><div class="bn" style="color:#7A4000">🟡 30–90 days</div></div><ul class="bi">${d.short_term_actions.map(a=>`<li>${e(a)}</li>`).join('')}</ul></div>`:''}
+    ${d.long_term_actions?.length?`<div class="bc" style="border-color:#E8F5E0"><div class="bh2"><div class="bn" style="color:#1A6030">🟢 Ongoing</div></div><ul class="bi">${d.long_term_actions.map(a=>`<li>${e(a)}</li>`).join('')}</ul></div>`:''}
+    </div>
+
+    <div class="st">Verification Checklist</div><div class="cd"><div class="ck">${(d.verification_checklist||[]).map(c=>`<label><input type="checkbox"/> ${e(c)}</label>`).join('')}</div></div>
+    </div>
+
+    ${auditStamp()}
+
+    <div class="ar">
+      <button class="btn bp" onclick="gMemo('ai')">✦ Generate ${sMF.toUpperCase()} Memo</button>
+      <button class="btn bg" onclick="xPDF('${e(d.tool_name||tool)} — Risk Analysis','aiRC')">Export PDF</button>
+      <button class="btn bo" onclick="window.print()">Print</button>
+      <button class="btn bo" onclick="document.getElementById('aiCfg').style.display='block';document.getElementById('aiR').innerHTML='';">← New</button>
+    </div></div>`;
+
+    res.innerHTML=html;window._ai=d;
+    svH({name:d.tool_name||tool,type:'AI Tool',score:sc,matter:gM(),html,live:true});
+  }catch(ex){err.textContent=ex.message;err.style.display='block';document.getElementById('aiCfg').style.display='block';}
+  btn.innerHTML='✦ Analyze';btn.disabled=false;
+}
+
+function shA(v,el){document.getElementById('a-full').style.display=v==='full'?'block':'none';document.getElementById('a-exec').style.display=v==='exec'?'block':'none';el.parentElement.querySelectorAll('.ab').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+
+// ═══ IP SEARCH ═══
+async function runIP(){const t=document.getElementById('ipT').value,q=document.getElementById('ipQ').value.trim();if(!q)return;const btn=document.getElementById('ipB'),err=document.getElementById('ipE'),res=document.getElementById('ipR');btn.innerHTML='<span class="sp"></span> Searching...';btn.disabled=true;err.style.display='none';res.innerHTML='';try{if(t==='trademark')await sTM(q,res);else if(t==='patent')await sPT(q,res);else await sCR(q,res);}catch(ex){err.textContent=ex.message;err.style.display='block';}btn.innerHTML='✦ Search';btn.disabled=false;}
+
+async function sTM(q,res){const api=await fTM(q);const ctx=api.data?'LIVE USPTO DATA:\n'+JSON.stringify(api.data).slice(0,2500)+(api.assignments?'\n\nASSIGNMENT RECORDS:\n'+JSON.stringify(api.assignments).slice(0,800):''):'USPTO API unavailable (CORS) — use Google Search grounding to find current USPTO data for this mark.';const json=await cJ(`Senior TM attorney. "${q}". ${ctx}\nSource: ${api.source||'Google Search grounding'}. JSON only:{mark_name,serial_number,registration_number,owner,status,filing_date,registration_date,expiration_date,international_classes:[],goods_services,distinctiveness,prosecution_history:[{date,event}],risk_score(0-100),risk_analysis:{overall_risk,confusion_risk,cancellation_risk,infringement_exposure,strength_of_mark},dupont_factors:[{factor,analysis,weight:"High|Medium|Low"}],similar_marks:[{mark,owner,class,risk_level}],legal_actions:[],sources:[{title,url,citation}],counsel_opinion}`,`TM: "${q}"`,true);const d=JSON.parse(json);const sc=d.risk_score||50;const live=!!api.data;
+const html=`<div id="ipRC"><div class="cd"><div class="rw">${rD(sc)}<div><h3 style="font-family:'Playfair Display',serif;font-size:17px;color:var(--deep)">${e(d.mark_name||q)} <span style="font-size:12px;font-weight:400;color:var(--text2)">— Trademark</span>${live?'<span class="lb lb-l">Live USPTO</span>':'<span class="lb lb-w">AI+Web</span>'}</h3><p style="font-size:12px;color:var(--text2)">Serial: ${d.serial_number||'N/A'} · Reg: ${d.registration_number||'N/A'}</p><div style="margin-top:4px">${stB(d.status)} <span style="font-size:12px;margin-left:6px">Owner: ${e(d.owner||'N/A')}</span></div></div></div></div>
+<div class="ig">${[['Filing',d.filing_date],['Reg',d.registration_date],['Expires',d.expiration_date],['Distinctiveness',d.distinctiveness],['Classes',(d.international_classes||[]).join(', ')]].map(([l,v])=>`<div class="is"><div class="il">${l}</div><div class="iv">${e(v||'N/A')}</div></div>`).join('')}</div>
+${d.dupont_factors?.length?`<div class="st">DuPont Factors</div><table class="dt"><thead><tr><th>Factor</th><th>Analysis</th><th>Weight</th></tr></thead><tbody>${d.dupont_factors.map(f=>`<tr><td>${e(f.factor)}</td><td>${e(f.analysis)}</td><td>${sB(f.weight)}</td></tr>`).join('')}</tbody></table>`:''}
+${d.prosecution_history?.length?`<div class="st">Prosecution History</div><div class="tl">${d.prosecution_history.map(h=>`<div class="ti"><div class="td2">${e(h.date)}</div><div class="tt">${e(h.event)}</div></div>`).join('')}</div>`:''}
+<div class="st">Risk</div><div class="rc"><div class="rv" style="color:${d.risk_analysis?.overall_risk==='High'?'#8A0030':'#7A4000'}">Overall: ${d.risk_analysis?.overall_risk||'N/A'}</div><div class="ig">${[['Confusion',d.risk_analysis?.confusion_risk],['Cancellation',d.risk_analysis?.cancellation_risk],['Infringement',d.risk_analysis?.infringement_exposure],['Strength',d.risk_analysis?.strength_of_mark]].map(([l,v])=>`<div class="is"><div class="il">${l}</div><div class="iv">${e(v||'N/A')}</div></div>`).join('')}</div></div>
+${d.similar_marks?.length?`<div class="st">Conflicts</div><table class="dt"><thead><tr><th>Mark</th><th>Owner</th><th>Class</th><th>Risk</th></tr></thead><tbody>${d.similar_marks.map(m=>`<tr><td>${e(m.mark)}</td><td>${e(m.owner)}</td><td>${e(m.class)}</td><td>${sB(m.risk_level)}</td></tr>`).join('')}</tbody></table>`:''}
+${d.counsel_opinion?`<div class="st">Opinion</div><div class="sc2"><p style="font-size:13px;line-height:1.7">${e(d.counsel_opinion)}</p></div>`:''}
+<div class="ar"><button class="btn bp" onclick="gMemo('ip')">✦ Memo</button><button class="btn bg" onclick="xPDF('TM — ${e(d.mark_name||q)}','ipRC')">PDF</button><a class="btn bo" href="https://tsdr.uspto.gov/#caseSearchType=US_APPLICATION&searchTerm=${encodeURIComponent(q)}" target="_blank">USPTO ↗</a></div></div>`;
+res.innerHTML=html;window._ip=d;window._ipt='Trademark';svH({name:d.mark_name||q,type:'Trademark',score:sc,matter:gM(),html,live});}
+
+async function sPT(q,res){const api=await fPT(q);const ctx=api.data?'LIVE PATENT DATA:\n'+JSON.stringify(api.data).slice(0,2500)+'\nSource: '+api.source:'PatentsView API unavailable (CORS) — use Google Search grounding to find current patent data.';const json=await cJ(`Senior patent attorney. "${q}". ${ctx} Web search. JSON:{patent_number,title,inventors:[],assignee,filing_date,grant_date,expiration_date,status,abstract,independent_claims_summary,claims_count,prosecution_history:[{date,event}],risk_score(0-100),risk_analysis:{overall_risk,validity_risk,infringement_risk,freedom_to_operate,design_around_options},claim_chart:[{element,product_feature,maps:"Yes|No|Unclear"}],legal_actions:[],sources:[{title,url,citation}],counsel_opinion}`,`Patent: "${q}"`,true);const d=JSON.parse(json);const sc=d.risk_score||50;const live=!!api.data;
+const html=`<div id="ipRC"><div class="cd"><div class="rw">${rD(sc)}<div><h3 style="font-family:'Playfair Display',serif;font-size:17px;color:var(--deep)">${e(d.title||q)} <span style="font-size:12px;font-weight:400;color:var(--text2)">— Patent</span>${live?'<span class="lb lb-l">Live</span>':'<span class="lb lb-w">AI+Web</span>'}</h3><p style="font-size:12px;color:var(--text2)">#: ${d.patent_number||'N/A'} · ${e(d.assignee||'N/A')}</p>${stB(d.status)}</div></div></div>
+<div class="ig">${[['Filing',d.filing_date],['Grant',d.grant_date],['Expires',d.expiration_date],['Claims',d.claims_count],['Inventors',(d.inventors||[]).join(', ')]].map(([l,v])=>`<div class="is"><div class="il">${l}</div><div class="iv">${e(v||'N/A')}</div></div>`).join('')}</div>
+${d.abstract?`<div class="st">Abstract</div><p style="font-size:13px;line-height:1.6">${e(d.abstract)}</p>`:''}
+${d.claim_chart?.length?`<div class="st">Claim Chart</div><table class="dt"><thead><tr><th>Element</th><th>Feature</th><th>Maps?</th></tr></thead><tbody>${d.claim_chart.map(c=>`<tr><td>${e(c.element)}</td><td>${e(c.product_feature)}</td><td><span class="b ${c.maps==='Yes'?'bh':c.maps==='No'?'bl':'bm'}">${c.maps}</span></td></tr>`).join('')}</tbody></table>`:''}
+<div class="st">Risk</div><div class="rc"><div class="rv" style="color:${d.risk_analysis?.overall_risk==='High'?'#8A0030':'#7A4000'}">Overall: ${d.risk_analysis?.overall_risk||'N/A'}</div><div class="ig">${[['Validity',d.risk_analysis?.validity_risk],['Infringement',d.risk_analysis?.infringement_risk],['FTO',d.risk_analysis?.freedom_to_operate],['Design-Around',d.risk_analysis?.design_around_options]].map(([l,v])=>`<div class="is"><div class="il">${l}</div><div class="iv">${e(v||'N/A')}</div></div>`).join('')}</div></div>
+${d.counsel_opinion?`<div class="st">Opinion</div><div class="sc2"><p style="font-size:13px;line-height:1.7">${e(d.counsel_opinion)}</p></div>`:''}
+<div class="ar"><button class="btn bp" onclick="gMemo('ip')">✦ Memo</button><button class="btn bg" onclick="xPDF('Patent — ${e(d.patent_number||q)}','ipRC')">PDF</button></div></div>`;
+res.innerHTML=html;window._ip=d;window._ipt='Patent';svH({name:d.title||q,type:'Patent',score:sc,matter:gM(),html,live});}
+
+async function sCR(q,res){const json=await cJ(`Senior copyright attorney. "${q}". Web search. JSON:{work_title,registration_number,copyright_claimant,author,registration_date,creation_date,work_type,status,term_of_protection,ownership_chain,licensing_landscape,risk_score(0-100),risk_analysis:{overall_risk,infringement_risk,fair_use_analysis,dmca_exposure,ownership_risk,ai_authorship_issue},fair_use_factors:[{factor,analysis,favors:"Plaintiff|Defendant|Neutral"}],legal_actions:[],statutory_damages,sources:[{title,url,citation}],counsel_opinion}`,`Copyright: "${q}"`,true);const d=JSON.parse(json);const sc=d.risk_score||50;
+const html=`<div id="ipRC"><div class="cd"><div class="rw">${rD(sc)}<div><h3 style="font-family:'Playfair Display',serif;font-size:17px;color:var(--deep)">${e(d.work_title||q)} <span style="font-size:12px;font-weight:400;color:var(--text2)">— Copyright</span><span class="lb lb-w">AI+Web</span></h3><p style="font-size:12px;color:var(--text2)">Reg: ${d.registration_number||'N/A'} · ${e(d.copyright_claimant||'N/A')}</p>${stB(d.status)}</div></div></div>
+<div class="ig">${[['Reg Date',d.registration_date],['Created',d.creation_date],['Term',d.term_of_protection],['Type',d.work_type],['Damages',d.statutory_damages]].map(([l,v])=>`<div class="is"><div class="il">${l}</div><div class="iv">${e(v||'N/A')}</div></div>`).join('')}</div>
+${d.ownership_chain?`<div class="st">Ownership</div><p style="font-size:13px;line-height:1.6">${e(d.ownership_chain)}</p>`:''}
+${d.fair_use_factors?.length?`<div class="st">Fair Use §107</div><table class="dt"><thead><tr><th>Factor</th><th>Analysis</th><th>Favors</th></tr></thead><tbody>${d.fair_use_factors.map(f=>`<tr><td>${e(f.factor)}</td><td>${e(f.analysis)}</td><td><span class="b ${f.favors==='Plaintiff'?'bh':f.favors==='Defendant'?'bl':'bm'}">${f.favors}</span></td></tr>`).join('')}</tbody></table>`:''}
+<div class="st">Risk</div><div class="rc"><div class="rv" style="color:${d.risk_analysis?.overall_risk==='High'?'#8A0030':'#7A4000'}">Overall: ${d.risk_analysis?.overall_risk||'N/A'}</div><div class="ig">${[['Infringement',d.risk_analysis?.infringement_risk],['DMCA',d.risk_analysis?.dmca_exposure],['Ownership',d.risk_analysis?.ownership_risk],['AI Authorship',d.risk_analysis?.ai_authorship_issue]].filter(([,v])=>v).map(([l,v])=>`<div class="is"><div class="il">${l}</div><div class="iv">${e(v)}</div></div>`).join('')}</div></div>
+${d.counsel_opinion?`<div class="st">Opinion</div><div class="sc2"><p style="font-size:13px;line-height:1.7">${e(d.counsel_opinion)}</p></div>`:''}
+<div class="ar"><button class="btn bp" onclick="gMemo('ip')">✦ Memo</button><button class="btn bg" onclick="xPDF('Copyright — ${e(d.work_title||q)}','ipRC')">PDF</button><a class="btn bo" href="https://cocatalog.loc.gov/cgi-bin/Pwebrecon.cgi?Search_Arg=${encodeURIComponent(q)}&Search_Code=TALL" target="_blank">Copyright.gov ↗</a></div></div>`;
+res.innerHTML=html;window._ip=d;window._ipt='Copyright';svH({name:d.work_title||q,type:'Copyright',score:sc,matter:gM(),html,live:false});}
+
+// ═══ MEMO ═══
+async function gMemo(src){const d=src==='ai'?window._ai:window._ip;if(!d)return;const type=src==='ai'?'AI Tool':(window._ipt||'IP');const name=d.tool_name||d.mark_name||d.title||d.work_title||'Asset';const firm=document.getElementById('lF').value.trim();const atty=document.getElementById('lA').value.trim();const ttl=document.getElementById('lT').value.trim();
+const m=document.createElement('div');m.className='mbg';m.innerHTML=`<div class="md"><div class="mh"><span class="mt2">Generating...</span></div><div style="text-align:center;padding:2rem"><div style="width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--hot);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto"></div><p style="margin-top:12px;font-size:13px;color:var(--text2)">Drafting ${sMF.toUpperCase()} memo ✦</p></div></div>`;document.body.appendChild(m);
+try{const txt=await cC(`Senior ${type==='AI Tool'?'product':'IP'} counsel. ${sMF.toUpperCase()} memo.${firm?' Firm: '+firm:''}${atty?' Atty: '+atty:''}${ttl?' Title: '+ttl:''}\nMatter: ${gM()}\nDate: ${new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})}\nInclude data flow, dollar exposure, comparable cases, compliance deadlines, opposing arguments. ALL CAPS headers. ONLY memo text.`,`${sMF.toUpperCase()} for: ${name} (${type})\nScore: ${d.risk_score}/100\n${JSON.stringify(d).slice(0,3500)}`,false);
+m.innerHTML=`<div class="md"><div class="mh"><span class="mt2">${type} Memo — ${e(name)}</span><button class="mc2" onclick="this.closest('.mbg').remove()">✕</button></div>${firm?`<div style="text-align:center;padding:10px 0 8px;border-bottom:2px solid var(--hot);margin-bottom:12px"><div style="font-weight:700;font-size:15px;color:var(--deep)">${e(firm)}</div>${atty?`<div style="color:var(--text2);font-size:12px">${e(atty)}${ttl?' — '+e(ttl):''}</div>`:''}</div>`:''}<div class="eb" id="mC">${e(txt)}</div><div class="mf"><button class="btn bo" onclick="this.closest('.mbg').remove()">Close</button><button class="btn bo" onclick="navigator.clipboard.writeText(document.getElementById('mC').textContent)">Copy</button><button class="btn bo" onclick="emailMemo('${e(type+' Risk Assessment — '+name)}')">Email</button><button class="btn bp" onclick="const b=new Blob([document.getElementById('mC').textContent],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='memo.txt';a.click()">Download</button></div></div>`;}catch(ex){m.innerHTML=`<div class="md"><div class="mh"><span class="mt2">Error</span><button class="mc2" onclick="this.closest('.mbg').remove()">✕</button></div><div class="err">${e(ex.message)}</div></div>`;}}
+function emailMemo(subject){const t=document.getElementById('mC');if(!t)return;const body=t.textContent;const max=1800;const trimmed=body.length>max?body.slice(0,max)+'...\n\n[Memo truncated for email — paste full version from clipboard]':body;window.open('mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(trimmed),'_blank');}
+
+// ═══ DARK MODE ═══
+function toggleDark(){
+  document.documentElement.classList.toggle('dark');
+  const isDark=document.documentElement.classList.contains('dark');
+  localStorage.setItem('lbDark',isDark?'1':'0');
+  document.querySelector('.dm-toggle').textContent=isDark?'☀️':'🌙';
+}
+if(localStorage.getItem('lbDark')==='1'){document.documentElement.classList.add('dark');document.addEventListener('DOMContentLoaded',()=>{const t=document.querySelector('.dm-toggle');if(t)t.textContent='☀️';});}
+
+// ═══ KEYBOARD SHORTCUTS ═══
+document.addEventListener('keydown',function(ev){
+  if((ev.ctrlKey||ev.metaKey)&&ev.key==='Enter'){
+    ev.preventDefault();
+    const aiTab=document.getElementById('tab-ai');
+    const ipTab=document.getElementById('tab-ip');
+    if(aiTab&&aiTab.style.display!=='none')runAI();
+    else if(ipTab&&ipTab.style.display!=='none')runIP();
+  }
+});
+
+// ═══ RATE LIMIT COUNTER ═══
+function getRateCount(){
+  const d=localStorage.getItem('lbRL');
+  if(!d)return{count:0,date:''};
+  try{const o=JSON.parse(d);if(o.date!==new Date().toDateString())return{count:0,date:''};return o;}catch{return{count:0,date:''};}
+}
+function incRate(){
+  const r=getRateCount();
+  r.count++;r.date=new Date().toDateString();
+  localStorage.setItem('lbRL',JSON.stringify(r));
+  updateRateUI();
+}
+function updateRateUI(){
+  const r=getRateCount();
+  const el=document.getElementById('rlBar');
+  if(el)el.innerHTML=r.count>0?`<span class="rl-ct">${r.count}</span> API calls today (Gemini free tier: ~15/min, 1500/day)`:'';
+}
+updateRateUI();
+// Hook into API calls
+const _origCC=cC;
+cC=async function(){incRate();return _origCC.apply(this,arguments);};
+
+// ═══ COLLAPSIBLE SECTIONS ═══
+document.addEventListener('click',function(ev){
+  const hdr=ev.target.closest('.coll-hdr');
+  if(!hdr)return;
+  hdr.classList.toggle('closed');
+  const body=hdr.nextElementSibling;
+  if(body&&body.classList.contains('coll-body')){body.classList.toggle('shut');}
+});
+
+// ═══ COMPARISON MODE ═══
+function populateCmp(){
+  const h=gH();
+  ['cmpA','cmpB'].forEach(id=>{
+    const sel=document.getElementById(id);if(!sel)return;
+    const val=sel.value;
+    sel.innerHTML='<option value="">Select...</option>'+h.map((item,i)=>`<option value="${i}">${e(item.name)} (${item.type}, ${item.score||'?'}/100)</option>`).join('');
+    sel.value=val;
+  });
+  const chart=document.getElementById('riskChart');
+  const panel=document.getElementById('cmpPanel');
+  if(h.length>=2){if(chart)chart.style.display='block';if(panel)panel.style.display='block';buildRiskChart(h);}
+  else{if(chart)chart.style.display='none';if(panel)panel.style.display='none';}
+}
+function buildRiskChart(h){
+  const items=h.slice(0,8);
+  const bars=document.getElementById('rChartBars');
+  const labels=document.getElementById('rChartLabels');
+  if(!bars||!labels)return;
+  bars.innerHTML=items.map(i=>{
+    const sc=i.score||50;const col=sc>=75?'var(--red)':sc>=45?'var(--orange)':'var(--green)';
+    return `<div class="rchart-bar" style="height:${sc}%;background:${col}"><span>${sc}</span></div>`;
+  }).join('');
+  labels.innerHTML=items.map(i=>`<div class="rchart-lbl">${e(i.name)}</div>`).join('');
+}
+function runCmp(){
+  const h=gH();
+  const aI=document.getElementById('cmpA').value;
+  const bI=document.getElementById('cmpB').value;
+  if(!aI||!bI||aI===bI){document.getElementById('cmpResult').innerHTML='';return;}
+  const a=h[parseInt(aI)],b=h[parseInt(bI)];
+  if(!a||!b)return;
+  const rows=[['Risk Score',a.score+'/100',b.score+'/100'],['Type',a.type,b.type],['Date',a.date,b.date],['Matter',a.matter||'N/A',b.matter||'N/A']];
+  document.getElementById('cmpResult').innerHTML=`<div class="cmp-grid"><div class="cmp-card"><h4>${e(a.name)}</h4>${rows.map(([l,va])=>`<div class="cmp-row"><span>${l}</span><span style="font-weight:600">${va}</span></div>`).join('')}</div><div class="cmp-card"><h4>${e(b.name)}</h4>${rows.map(([l,,vb])=>`<div class="cmp-row"><span>${l}</span><span style="font-weight:600">${vb}</span></div>`).join('')}</div></div>`;
+}
+
+// ═══ EXPORT HISTORY ═══
+function exportHistory(){
+  const h=gH();if(!h.length)return alert('No history to export.');
+  const clean=h.map(({name,type,score,date,matter,live})=>({name,type,score,date,matter,live}));
+  const blob=new Blob([JSON.stringify(clean,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='the_esq_history_'+Date.now()+'.json';a.click();
+}
+
+// ═══ AUDIT TRAIL ═══
+function auditStamp(){
+  const now=new Date();
+  const hash=btoa(now.toISOString()).slice(0,12);
+  return `<div class="audit">Analysis ID: ${hash} · Generated: ${now.toLocaleString()} · Tool: The Esq. · Verify all citations independently.</div>`;
+}
+
+// ═══ OVERRIDE renderHistory to include chart + comparison ═══
+const _origRH=rH;
+rH=function(){_origRH();populateCmp();};
 </script>
 </body>
 </html>
