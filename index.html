@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>AI Tool Legal Issue Spotter</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'DM Sans',sans-serif;background:#f4f5f7;color:#1a1a1a;min-height:100vh}
+  .serif{font-family:'Libre Baskerville',serif}
+  .app{max-width:900px;margin:0 auto;padding:2rem 1.5rem}
+  .header{text-align:center;padding:2.5rem 0 2rem}
+  .header h1{font-family:'Libre Baskerville',serif;font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#1a1a1a}
+  .header p{font-size:14px;color:#666;margin-top:8px}
+  .rule{height:1px;background:#e0e0e0;margin:0.5rem 0 2rem}
+  .search-card{background:#fff;border:0.5px solid #ddd;border-radius:12px;padding:1.5rem}
+  .search-row{display:flex;gap:10px;align-items:center}
+  .search-row input{flex:1;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:15px;border:1px solid #ddd;border-radius:8px;background:#f9f9f9;color:#1a1a1a;outline:none}
+  .search-row input:focus{border-color:#1a2a4a}
+  .btn-primary{padding:10px 22px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;background:#1a2a4a;color:#fff;border:none;border-radius:8px;cursor:pointer;white-space:nowrap}
+  .btn-primary:hover{background:#243560}
+  .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+  .btn-outline{padding:9px 18px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;background:transparent;color:#1a1a1a;border:1px solid #ccc;border-radius:8px;cursor:pointer}
+  .btn-outline:hover{background:#f5f5f5}
+  .spinner{display:inline-block;width:18px;height:18px;border:2px solid #ffffff44;border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .error-box{background:#fff0f0;border:1px solid #ffcccc;color:#cc0000;padding:12px 16px;border-radius:8px;font-size:14px;margin-top:1rem}
+  .section{margin-top:1.5rem}
+  .section-title{font-family:'Libre Baskerville',serif;font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#888;margin-bottom:0.75rem}
+  .summary-card{background:#fff;border-left:3px solid #1a2a4a;border-top:1px solid #e8e8e8;border-right:1px solid #e8e8e8;border-bottom:1px solid #e8e8e8;border-radius:0 8px 8px 0;padding:1rem 1.25rem}
+  .summary-card p{font-size:14px;line-height:1.7;color:#1a1a1a}
+  .badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 9px;border-radius:20px}
+  .badge-high{background:#FCEBEB;color:#791F1F}
+  .badge-medium{background:#FAEEDA;color:#633806}
+  .badge-low{background:#EAF3DE;color:#27500A}
+  .bucket-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+  .bucket-card{background:#fff;border:1px solid #e8e8e8;border-radius:12px;padding:1rem}
+  .bucket-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.6rem}
+  .bucket-name{font-size:13px;font-weight:500;color:#1a1a1a;line-height:1.4;flex:1;margin-right:8px}
+  .bucket-issues{padding-left:16px;margin:0}
+  .bucket-issues li{font-size:12px;color:#555;line-height:1.6}
+  .state-table{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e8e8e8;border-radius:12px;overflow:hidden}
+  .state-table th{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.07em;color:#888;padding:10px 14px;background:#f9f9f9;border-bottom:1px solid #e8e8e8;text-align:left}
+  .state-table td{font-size:13px;padding:9px 14px;border-bottom:1px solid #f0f0f0;color:#1a1a1a;vertical-align:top}
+  .state-table tr:last-child td{border-bottom:none}
+  .state-table td:first-child{font-weight:500;white-space:nowrap}
+  .state-table td:nth-child(2){color:#555;font-style:italic}
+  .sources-list{display:flex;flex-direction:column;gap:8px}
+  .source-item{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:10px 14px}
+  .source-item a{font-size:13px;color:#1a4a8a;text-decoration:none;font-weight:500}
+  .source-item a:hover{text-decoration:underline}
+  .source-item p{font-size:12px;color:#888;margin-top:2px}
+  .rec-card{background:#f5f7ff;border:1px solid #c5cfe8;border-radius:12px;padding:1.25rem 1.5rem}
+  .rec-label{font-size:11px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;color:#4a5c8a;margin-bottom:6px}
+  .rec-text{font-size:14px;line-height:1.7;color:#1a2a4a}
+  .rec-actions{display:flex;gap:10px;margin-top:1rem;flex-wrap:wrap}
+  .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem}
+  .modal{background:#fff;border-radius:12px;border:1px solid #ddd;padding:1.5rem;width:100%;max-width:680px;max-height:80vh;overflow-y:auto}
+  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+  .modal-title{font-family:'Libre Baskerville',serif;font-size:16px;font-weight:700}
+  .modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:#888;padding:4px}
+  .email-body{background:#f9f9f9;border:1px solid #e8e8e8;border-radius:8px;padding:1.25rem;font-size:13px;line-height:1.8;white-space:pre-wrap;color:#1a1a1a}
+  .modal-footer{display:flex;justify-content:flex-end;margin-top:1rem;gap:8px;align-items:center}
+  .copied{color:green;font-size:13px}
+  @media(max-width:600px){.search-row{flex-direction:column}.btn-primary{width:100%}.bucket-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState}=React;
+
+const SYSTEM_PROMPT=`You are a senior product counsel specializing in AI law and technology regulation. When given the name of an AI tool or application, analyze its potential legal liabilities and return ONLY a valid JSON object (no markdown, no code fences, no preamble).
+
+The JSON must follow this exact schema:
+{
+  "tool_name": "string",
+  "summary": "string (2-3 sentence executive summary of key liability exposure)",
+  "buckets": [
+    {
+      "category": "string (e.g. IP & Copyright, Data Privacy, Consumer Protection & FTC, Products Liability, Employment & Labor, Algorithmic Bias & Civil Rights, National Security & Export Controls, Contracts & ToS Enforceability)",
+      "issues": ["string array of specific issues"],
+      "severity": "High|Medium|Low"
+    }
+  ],
+  "state_laws": [
+    {
+      "state": "string",
+      "law": "string (statute name and code)",
+      "relevance": "string (1-2 sentences)"
+    }
+  ],
+  "sources": [
+    {
+      "title": "string",
+      "citation": "string",
+      "url": "string (real URL if known, else empty string)"
+    }
+  ],
+  "recommendation": "string (clear product counsel recommendation: Proceed, Proceed with Guardrails, or Do Not Deploy — with 2-3 sentence legal reasoning)"
+}
+
+Be thorough. Cover at minimum 5 legal buckets. Include at least 6 state law entries covering IL BIPA, TX CUBI, CO AI Act, CA CCPA/CPRA, NY Local Law 144 if applicable, and EU AI Act where relevant. Include at least 5 real sources with accurate citations.`;
+
+const EMAIL_SYSTEM=`You are a senior product counsel writing an internal legal memo. Draft a professional internal email in CREAC format (Conclusion, Rule, Explanation, Application, Conclusion) to a supervisor summarizing AI tool legal risk analysis. Use formal but clear language. Return ONLY the email text, no JSON, no markdown. Format it as a proper email with To/From/Subject/Date header, then the CREAC body.`;
+
+function Badge({severity}){
+  const cls=severity==='High'?'badge-high':severity==='Medium'?'badge-medium':'badge-low';
+  return <span className={`badge ${cls}`}>{severity}</span>;
+}
+
+function App(){
+  const[tool,setTool]=useState('');
+  const[loading,setLoading]=useState(false);
+  const[emailLoading,setEmailLoading]=useState(false);
+  const[error,setError]=useState('');
+  const[result,setResult]=useState(null);
+  const[email,setEmail]=useState('');
+  const[showModal,setShowModal]=useState(false);
+  const[copied,setCopied]=useState(false);
+
+  async function analyze(){
+    if(!tool.trim())return;
+    setLoading(true);setError('');setResult(null);
+    try{
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:3000,
+          system:SYSTEM_PROMPT,
+          messages:[{role:'user',content:`Analyze the AI tool: ${tool}`}]
+        })
+      });
+      const data=await res.json();
+      const raw=data.content?.map(b=>b.text||'').join('');
+      const clean=raw.replace(/```json|```/g,'').trim();
+      const parsed=JSON.parse(clean);
+      setResult(parsed);
+    }catch(e){
+      setError('Analysis failed. Please check your connection and try again.');
+    }
+    setLoading(false);
+  }
+
+  async function generateEmail(){
+    if(!result)return;
+    setEmailLoading(true);
+    try{
+      const prompt=`Generate a CREAC-format internal email to my supervisor about the following AI tool legal analysis:\n\nTool: ${result.tool_name}\nSummary: ${result.summary}\nRecommendation: ${result.recommendation}\nLegal Buckets: ${result.buckets.map(b=>`${b.category} (${b.severity}): ${b.issues.join('; ')}`).join('\n')}\nState Laws: ${result.state_laws.map(s=>`${s.state} - ${s.law}: ${s.relevance}`).join('\n')}\nSources: ${result.sources.map(s=>`${s.title} (${s.citation})`).join('; ')}`;
+      const res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:'claude-sonnet-4-20250514',
+          max_tokens:2000,
+          system:EMAIL_SYSTEM,
+          messages:[{role:'user',content:prompt}]
+        })
+      });
+      const data=await res.json();
+      const text=data.content?.map(b=>b.text||'').join('');
+      setEmail(text);setShowModal(true);
+    }catch(e){
+      setError('Email generation failed.');
+    }
+    setEmailLoading(false);
+  }
+
+  function copyEmail(){
+    navigator.clipboard.writeText(email);
+    setCopied(true);setTimeout(()=>setCopied(false),2000);
+  }
+
+  const recVerdict=result?.recommendation?.toLowerCase().includes('do not')?'Do Not Deploy':
+    result?.recommendation?.toLowerCase().includes('guardrails')?'Proceed with Guardrails':'Proceed';
+  const recColor=recVerdict==='Do Not Deploy'?'#7a0000':recVerdict==='Proceed with Guardrails'?'#633806':'#27500A';
+
+  return(
+    <div className="app">
+      <div className="header">
+        <div style={{display:'inline-block',background:'#1a2a4a',color:'#c8a96e',padding:'5px 14px',borderRadius:'4px',fontSize:'11px',fontWeight:500,letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:'14px'}}>Product Counsel Tool</div>
+        <h1 className="serif">AI Tool Legal Issue Spotter</h1>
+        <p>Enter an AI tool or application name to analyze legal liabilities across federal and state law</p>
+      </div>
+      <div className="rule"/>
+
+      <div className="search-card">
+        <div className="search-row">
+          <input
+            value={tool}
+            onChange={e=>setTool(e.target.value)}
+            onKeyDown={e=>e.key==='Enter'&&analyze()}
+            placeholder="e.g. ChatGPT, GitHub Copilot, Midjourney, Workday AI..."
+          />
+          <button className="btn-primary" onClick={analyze} disabled={loading||!tool.trim()}>
+            {loading?<span className="spinner"/>:'Analyze'}
+          </button>
+        </div>
+        {error&&<div className="error-box">{error}</div>}
+      </div>
+
+      {result&&<>
+        <div className="section">
+          <div className="section-title">Executive Summary</div>
+          <div className="summary-card">
+            <p style={{fontFamily:'Libre Baskerville,serif',fontSize:'15px',fontWeight:700,marginBottom:'8px'}}>{result.tool_name}</p>
+            <p>{result.summary}</p>
+          </div>
+        </div>
+
+        <div className="section">
+          <div className="section-title">Legal Risk Buckets</div>
+          <div className="bucket-grid">
+            {result.buckets?.map((b,i)=>(
+              <div key={i} className="bucket-card">
+                <div className="bucket-header">
+                  <div className="bucket-name">{b.category}</div>
+                  <Badge severity={b.severity}/>
+                </div>
+                <ul className="bucket-issues">
+                  {b.issues?.map((iss,j)=><li key={j}>{iss}</li>)}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="section">
+          <div className="section-title">Applicable State &amp; Federal Laws</div>
+          <table className="state-table">
+            <thead>
+              <tr><th>Jurisdiction</th><th>Statute</th><th>Relevance</th></tr>
+            </thead>
+            <tbody>
+              {result.state_laws?.map((s,i)=>(
+                <tr key={i}>
+                  <td>{s.state}</td>
+                  <td>{s.law}</td>
+                  <td>{s.relevance}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="section">
+          <div className="section-title">Cited Sources</div>
+          <div className="sources-list">
+            {result.sources?.map((s,i)=>(
+              <div key={i} className="source-item">
+                {s.url?<a href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a>:<span style={{fontSize:'13px',fontWeight:500}}>{s.title}</span>}
+                <p>{s.citation}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="section" style={{marginBottom:'3rem'}}>
+          <div className="section-title">Product Counsel Recommendation</div>
+          <div className="rec-card">
+            <div className="rec-label" style={{color:recColor}}>{recVerdict}</div>
+            <div className="rec-text">{result.recommendation}</div>
+            <div className="rec-actions">
+              <button className="btn-primary" onClick={generateEmail} disabled={emailLoading}>
+                {emailLoading?<span className="spinner"/>:'Confirm & Generate Supervisor Email'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </>}
+
+      {showModal&&(
+        <div className="modal-bg" onClick={e=>e.target===e.currentTarget&&setShowModal(false)}>
+          <div className="modal">
+            <div className="modal-header">
+              <span className="modal-title serif">Supervisor Email — CREAC Format</span>
+              <button className="modal-close" onClick={()=>setShowModal(false)}>&#x2715;</button>
+            </div>
+            <div className="email-body">{email}</div>
+            <div className="modal-footer">
+              {copied&&<span className="copied">Copied!</span>}
+              <button className="btn-outline" onClick={()=>setShowModal(false)}>Close</button>
+              <button className="btn-primary" onClick={copyEmail}>Copy to Clipboard</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
